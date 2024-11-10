@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>xAI Web Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    #userInput {
+      font-size: 1.5em;
+      padding: 10px;
+      width: 300px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      border: 2px solid #ccc;
+      text-align: center;
+    }
+
+    button {
+      font-size: 1.2em;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    #output {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      border: 2px solid #ccc;
+      width: 80%;
+      max-width: 600px;
+      min-height: 150px;
+      margin-top: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      overflow-y: auto;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    p {
+      color: #333;
+      font-size: 1.2em;
+      margin: 0;
+    }
+
+    #loading {
+      display: none;
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h1>xAI Web Chat</h1>
+  <input type="text" id="userInput" placeholder="Type your message here" />
+  <button onclick="getResponse()">Send</button>
+  <div id="output">
+    <p><strong>Response:</strong></p>
+  </div>
+  <div id="loading"></div>
+
+  <script>
+    // Function to clear the input field
+    function clearInput() {
+      document.getElementById("userInput").value = "";
+    }
+
+    // Function to handle sending the message and getting a response
+    async function getResponse() {
+      const userInput = document.getElementById("userInput").value;
+      const output = document.getElementById("output");
+      const loading = document.getElementById("loading");
+
+      // Show loading indicator
+      loading.style.display = "block";
+      output.innerHTML = ""; // Clear previous content
+
+      const apiKey = "xai-U9sfq5bryKwbbOfR4UTWdoLmlHisHGnpKMvEVKrOTdKW0qBlZvUcSyD4GL3i2u0qGOrQkfS5oRKzVHOX"; // Replace with your actual API key
+      const url = "https://api.x.ai/v1/chat/completions";
+      const headers = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      };
+      const data = {
+        model: "grok-beta",
+        messages: [
+          { role: "system", content: "You are an anime girl who is kind, cute, and friendly. You enjoy talking with people and making them feel happy and comfortable." },
+          { role: "user", content: userInput }
+        ]
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const result = await response.json();
+
+        const message = result.choices[0].message.content;
+        // Check if the response contains an image URL or base64 data
+        if (message.startsWith("http") && (message.endsWith(".jpg") || message.endsWith(".png"))) {
+          // If the response is an image URL
+          const img = document.createElement("img");
+          img.src = message;
+          img.alt = "Chat Response Image";
+          output.innerHTML = ""; // Clear previous content
+          output.appendChild(img); // Add the image to the output
+        } else {
+          // If it's a normal text response
+          output.innerHTML = "<p><strong>Response:</strong></p>" + "<p>" + message + "</p>";
+        }
+      } catch (error) {
+        output.innerHTML = "<p><strong>Error:</strong> " + error.message + "</p>";
+      } finally {
+        // Hide loading indicator after response is fetched
+        loading.style.display = "none";
+        // Clear the input field after response is sent
+        clearInput();
+      }
+    }
+
+    // Add event listener for Enter key press to trigger getResponse
+    document.getElementById("userInput").addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault(); // Prevent default action (form submission)
+        getResponse(); // Call the getResponse function
+      }
+    });
+  </script>
+</body>
+</html>
