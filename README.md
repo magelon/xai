@@ -5,7 +5,7 @@
 **xAI Web Chat** is a simple web application that connects to the xAI API to provide conversational AI responses in a user-friendly interface. The chatbot is inspired by anime girl personas, offering a fun and interactive experience. This project is built with **HTML**, **CSS**, and **JavaScript** to provide a lightweight and easy-to-use web app.
 
 ## Features
-
+![xAI Web Chat Screenshot](https://raw.githubusercontent.com/magelon/xai/main/Capture.PNG)
 - **Interactive Chat Interface**: A text input field for users to type their messages.
 - **Anime Girl Persona**: The system role is set to an anime girl persona for a friendly and fun conversation.
 - **Real-Time Responses**: Receive responses from xAI's conversational model.
