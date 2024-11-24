@@ -3,48 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>xAI Web Chat</title>
+  <title>AI Chat Web</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      margin: 0;
+      min-height: 100vh;
     }
-
     h1 {
       color: #333;
     }
-
-    #userInput {
-      font-size: 1.5em;
-      padding: 10px;
+    form, .chat-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       width: 300px;
-      margin-bottom: 20px;
-      border-radius: 8px;
-      border: 2px solid #ccc;
-      text-align: center;
+      margin: 20px 0;
     }
-
+    input {
+      font-size: 1em;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
     button {
-      font-size: 1.2em;
-      padding: 10px 20px;
+      font-size: 1em;
+      padding: 10px;
+      margin: 10px 0;
       border: none;
-      border-radius: 8px;
+      border-radius: 5px;
       background-color: #4CAF50;
       color: white;
       cursor: pointer;
-      transition: background-color 0.3s;
+      width: 100%;
     }
-
     button:hover {
       background-color: #45a049;
     }
-
+    .message {
+      font-size: 0.9em;
+      color: red;
+      margin: 10px 0;
+    }
+    #chat {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    #userInput {
+      font-size: 1em;
+      padding: 10px;
+      margin: 10px 0;
+      width: 300px;
+      border-radius: 8px;
+      border: 2px solid #ccc;
+    }
     #output {
       background-color: white;
       padding: 20px;
@@ -57,19 +78,6 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       overflow-y: auto;
     }
-
-    img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-    }
-
-    p {
-      color: #333;
-      font-size: 1.2em;
-      margin: 0;
-    }
-
     #loading {
       display: none;
       width: 50px;
@@ -78,9 +86,7 @@
       border-top: 5px solid #3498db;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin-bottom: 20px;
     }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -88,31 +94,88 @@
   </style>
 </head>
 <body>
-  <h1>xAI Web Chat</h1>
-  <input type="text" id="userInput" placeholder="Type your message here" />
-  <button onclick="getResponse()">Send</button>
-  <div id="output">
-    <p><strong>Response:</strong></p>
+  <h1>AI Chat Web</h1>
+  <form id="loginForm">
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+    <button type="button" id="signup">Sign Up</button>
+    <p class="message" id="message"></p>
+  </form>
+
+  <div id="chat">
+    <input type="text" id="userInput" placeholder="Type your message here" />
+    <button onclick="getResponse()">Send</button>
+    <div id="output">
+      <p><strong>Response:</strong></p>
+    </div>
+    <div id="loading"></div>
   </div>
-  <div id="loading"></div>
 
-  <script>
-    // Function to clear the input field
-    function clearInput() {
-      document.getElementById("userInput").value = "";
-    }
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
-    // Function to handle sending the message and getting a response
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOCTBW6jjVDCL7dzZKrA8Ff9MNsxLx71c",
+      authDomain: "aichat-2c5b2.firebaseapp.com",
+      projectId: "aichat-2c5b2",
+      storageBucket: "aichat-2c5b2.firebasestorage.app",
+      messagingSenderId: "765004472785",
+      appId: "1:765004472785:web:c028c0fac16f6dbeb180f0",
+      measurementId: "G-68HTPKFVRM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const loginForm = document.getElementById("loginForm");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const messageElement = document.getElementById("message");
+    const signupButton = document.getElementById("signup");
+    const chatContainer = document.getElementById("chat");
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailInput.value;
+      const password = passwordInput.value;
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        messageElement.style.color = "green";
+        messageElement.textContent = `Welcome, ${userCredential.user.email}!`;
+        loginForm.style.display = "none";
+        chatContainer.style.display = "flex";
+      } catch (error) {
+        messageElement.style.color = "red";
+        messageElement.textContent = error.message;
+      }
+    });
+
+    signupButton.addEventListener("click", async () => {
+      const email = emailInput.value;
+      const password = passwordInput.value;
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        messageElement.style.color = "green";
+        messageElement.textContent = `Account created for ${userCredential.user.email}! Please log in.`;
+      } catch (error) {
+        messageElement.style.color = "red";
+        messageElement.textContent = error.message;
+      }
+    });
+
     async function getResponse() {
       const userInput = document.getElementById("userInput").value;
       const output = document.getElementById("output");
       const loading = document.getElementById("loading");
 
-      // Show loading indicator
       loading.style.display = "block";
-      output.innerHTML = ""; // Clear previous content
+      output.innerHTML = "";
 
-      const apiKey = "xai-U9sfq5bryKwbbOfR4UTWdoLmlHisHGnpKMvEVKrOTdKW0qBlZvUcSyD4GL3i2u0qGOrQkfS5oRKzVHOX"; // Replace with your actual API key
+      const apiKey = "xai-U9sfq5bryKwbbOfR4UTWdoLmlHisHGnpKMvEVKrOTdKW0qBlZvUcSyD4GL3i2u0qGOrQkfS5oRKzVHOX";
       const url = "https://api.x.ai/v1/chat/completions";
       const headers = {
         "Content-Type": "application/json",
@@ -121,7 +184,7 @@
       const data = {
         model: "grok-beta",
         messages: [
-          { role: "system", content: "You are an anime girl who is kind, cute, and friendly. You enjoy talking with people and making them feel happy and comfortable." },
+          { role: "system", content: "You are an anime girl who is kind, cute, and friendly." },
           { role: "user", content: userInput }
         ]
       };
@@ -134,37 +197,17 @@
         });
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
-
         const message = result.choices[0].message.content;
-        // Check if the response contains an image URL or base64 data
-        if (message.startsWith("http") && (message.endsWith(".jpg") || message.endsWith(".png"))) {
-          // If the response is an image URL
-          const img = document.createElement("img");
-          img.src = message;
-          img.alt = "Chat Response Image";
-          output.innerHTML = ""; // Clear previous content
-          output.appendChild(img); // Add the image to the output
-        } else {
-          // If it's a normal text response
-          output.innerHTML = "<p><strong>Response:</strong></p>" + "<p>" + message + "</p>";
-        }
+        output.innerHTML = `<p><strong>Response:</strong></p><p>${message}</p>`;
       } catch (error) {
-        output.innerHTML = "<p><strong>Error:</strong> " + error.message + "</p>";
+        output.innerHTML = `<p><strong>Error:</strong> ${error.message}</p>`;
       } finally {
-        // Hide loading indicator after response is fetched
         loading.style.display = "none";
-        // Clear the input field after response is sent
-        clearInput();
       }
     }
 
-    // Add event listener for Enter key press to trigger getResponse
-    document.getElementById("userInput").addEventListener("keypress", function(event) {
-      if (event.key === "Enter") {
-        event.preventDefault(); // Prevent default action (form submission)
-        getResponse(); // Call the getResponse function
-      }
-    });
+    // Expose the function globally
+    window.getResponse = getResponse;
   </script>
 </body>
 </html>
