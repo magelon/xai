@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Chat</title>
+  
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -93,19 +93,35 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    #signUpForm {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <h1>AI Chat</h1>
+  
+
+  <!-- Login Form -->
   <form id="loginForm">
-    <input type="email" id="email" placeholder="Email" required>
-    <input type="password" id="password" placeholder="Password" required>
+    <input type="email" id="loginEmail" placeholder="Email" required>
+    <input type="password" id="loginPassword" placeholder="Password" required>
     <button type="submit">Login</button>
-    <button type="button" id="signup">Sign Up</button>
+    <button type="button" id="showSignUp">Sign Up</button>
     <a href="#" id="resetPassword">Forgot Password?</a>
-    <p class="message" id="message"></p>
+    <p class="message" id="loginMessage"></p>
   </form>
 
+  <!-- Sign Up Form -->
+  <form id="signUpForm">
+    <input type="email" id="signUpEmail" placeholder="Email" required>
+    <input type="password" id="signUpPassword" placeholder="Password" required>
+    <input type="password" id="signUpConfirmPassword" placeholder="Confirm Password" required>
+    <button type="submit">Create Account</button>
+    <button type="button" id="showLogin">Back to Login</button>
+    <p class="message" id="signUpMessage"></p>
+  </form>
+
+  <!-- Chat Section -->
   <div id="chat">
     <input type="text" id="userInput" placeholder="Type your message here" />
     <button onclick="getResponse()">Send</button>
@@ -113,6 +129,7 @@
       <p><strong>Response:</strong></p>
     </div>
     <div id="loading"></div>
+    <button id="logoutButton">Logout</button>
   </div>
 
   <script type="module">
@@ -133,31 +150,46 @@
     const auth = getAuth(app);
 
     const loginForm = document.getElementById("loginForm");
-    const emailInput = document.getElementById("email");
-    const passwordInput = document.getElementById("password");
-    const messageElement = document.getElementById("message");
-    const signupButton = document.getElementById("signup");
-    const resetPasswordLink = document.getElementById("resetPassword");
+    const signUpForm = document.getElementById("signUpForm");
     const chatContainer = document.getElementById("chat");
-    const output = document.getElementById("output");
+    const messageElement = document.getElementById("loginMessage");
+    const signupMessageElement = document.getElementById("signUpMessage");
+    const logoutButton = document.getElementById("logoutButton");
+
+    const showSignUpButton = document.getElementById("showSignUp");
+    const showLoginButton = document.getElementById("showLogin");
+
+    // Toggle between login and signup forms
+    showSignUpButton.addEventListener("click", () => {
+      loginForm.style.display = "none";
+      signUpForm.style.display = "flex";
+    });
+
+    showLoginButton.addEventListener("click", () => {
+      signUpForm.style.display = "none";
+      loginForm.style.display = "flex";
+    });
 
     // Check if user is already logged in
     onAuthStateChanged(auth, (user) => {
       if (user) {
         loginForm.style.display = "none";
+        signUpForm.style.display = "none";
         chatContainer.style.display = "flex";
         messageElement.style.color = "green";
         messageElement.textContent = `Welcome back, ${user.email}!`;
       } else {
         loginForm.style.display = "flex";
+        signUpForm.style.display = "none";
         chatContainer.style.display = "none";
       }
     });
 
+    // Login form submission
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const email = emailInput.value;
-      const password = passwordInput.value;
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
 
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -171,22 +203,47 @@
       }
     });
 
-    signupButton.addEventListener("click", async () => {
-      const email = emailInput.value;
-      const password = passwordInput.value;
+    // Sign up form submission
+    signUpForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("signUpEmail").value;
+      const password = document.getElementById("signUpPassword").value;
+      const confirmPassword = document.getElementById("signUpConfirmPassword").value;
+
+      if (password !== confirmPassword) {
+        signupMessageElement.style.color = "red";
+        signupMessageElement.textContent = "Passwords do not match!";
+        return;
+      }
 
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        messageElement.style.color = "green";
-        messageElement.textContent = `Account created for ${userCredential.user.email}! Please log in.`;
+        signupMessageElement.style.color = "green";
+        signupMessageElement.textContent = `Account created for ${userCredential.user.email}! Please log in.`;
       } catch (error) {
-        messageElement.style.color = "red";
-        messageElement.textContent = error.message;
+        signupMessageElement.style.color = "red";
+        signupMessageElement.textContent = error.message;
       }
     });
 
+    // Logout functionality
+    logoutButton.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        loginForm.style.display = "flex";
+        chatContainer.style.display = "none";
+        messageElement.style.color = "green";
+        messageElement.textContent = "You have logged out successfully.";
+      } catch (error) {
+        messageElement.style.color = "red";
+        messageElement.textContent = "Error logging out: " + error.message;
+      }
+    });
+
+    // Password Reset
+    const resetPasswordLink = document.getElementById("resetPassword");
     resetPasswordLink.addEventListener("click", async () => {
-      const email = emailInput.value;
+      const email = document.getElementById("loginEmail").value;
 
       if (!email) {
         messageElement.style.color = "red";
@@ -204,16 +261,17 @@
       }
     });
 
+    // Expose getResponse globally for chat
     async function getResponse() {
       const userInput = document.getElementById("userInput").value;
 
       if (!userInput) {
-        output.style.display = "none";
         return;
       }
 
       const loading = document.getElementById("loading");
       loading.style.display = "block";
+      const output = document.getElementById("output");
       output.style.display = "none";
 
       const apiKey = "xai-U9sfq5bryKwbbOfR4UTWdoLmlHisHGnpKMvEVKrOTdKW0qBlZvUcSyD4GL3i2u0qGOrQkfS5oRKzVHOX";
@@ -225,7 +283,7 @@
       const data = {
         model: "grok-beta",
         messages: [
-          { role: "system", content: "You are an anime girl who is kind, cute, and friendly." },
+          { role: "system", content: "You are Lumine a celestial traveler in fantasy world, a graceful, sword-wielding protagonist searching for her lost twin across the world." },
           { role: "user", content: userInput }
         ]
       };
@@ -249,7 +307,6 @@
       }
     }
 
-    // Expose the function globally
     window.getResponse = getResponse;
   </script>
 </body>
